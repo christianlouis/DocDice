@@ -5,6 +5,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import inch
 from faker import Faker
+from reportlab.lib.utils import ImageReader  # Import ImageReader
 
 app = Flask(__name__)
 
@@ -47,12 +48,12 @@ def generate_pdf():
         y_position -= 15
 
     # Embed the image
-    # First, write the downloaded image to an in-memory buffer
-    # Note: For certain image formats, we might need to use PIL to decode properly,
-    # but if the response is a jpeg from picsum, this simple approach works.
+    # Use ImageReader to process the BytesIO object
     img_buffer = io.BytesIO(image_data)
-    # let's place the image below the text
-    pdf_canvas.drawImage(img_buffer, 50, 400, width=4*inch, height=3*inch)
+    img_reader = ImageReader(img_buffer)  # Process the image data
+
+    # Place the image below the text
+    pdf_canvas.drawImage(img_reader, 50, 400, width=4*inch, height=3*inch)
 
     # finalize
     pdf_canvas.showPage()
