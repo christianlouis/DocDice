@@ -24,11 +24,13 @@ def generate_pdf():
     # Decide which language to use based on the query parameter; default to English
     lang = request.args.get('lang', 'en').lower()
     if lang == 'de':
-        text = fake_de.text()
+        text = "\n\n".join([fake_de.text() for _ in range(4)])  # Generate 4 paragraphs
+        text_after_image = "\n\n".join([fake_de.text() for _ in range(2)])  # Generate 2 paragraphs
     else:
-        text = fake_en.text()
+        text = "\n\n".join([fake_en.text() for _ in range(4)])  # Generate 4 paragraphs
+        text_after_image = "\n\n".join([fake_en.text() for _ in range(2)])  # Generate 2 paragraphs
 
-    # Fetch a random image from picsum (you could also use Unsplash or other services)
+    # Fetch a random image from picsum
     image_url = "https://picsum.photos/600/400"
     response = requests.get(image_url)
     image_data = response.content  # raw bytes
@@ -37,25 +39,37 @@ def generate_pdf():
     pdf_buffer = io.BytesIO()
     pdf_canvas = canvas.Canvas(pdf_buffer, pagesize=A4)
 
-    # Add text
+    # Add text before the image
     pdf_canvas.setFont("Helvetica", 12)
-    pdf_canvas.drawString(50, 780, "Random PDF Generator")
-    pdf_canvas.drawString(50, 760, f"Language: {lang}")
-    text_lines = text.split('\n')
-    y_position = 740
-    for line in text_lines:
-        pdf_canvas.drawString(50, y_position, line)
-        y_position -= 15
+    text_object = pdf_canvas.beginText(50, 780)  # Start at the top-left corner
+    text_object.setTextOrigin(50, 780)
+    text_object.setFont("Helvetica", 12)
+
+    # Wrap and add the paragraphs
+    for paragraph in text.split("\n\n"):
+        for line in paragraph.splitlines():
+            text_object.textLine(line)
+        text_object.textLine("")  # Add a blank line between paragraphs
+
+    pdf_canvas.drawText(text_object)
 
     # Embed the image
-    # Use ImageReader to process the BytesIO object
     img_buffer = io.BytesIO(image_data)
     img_reader = ImageReader(img_buffer)  # Process the image data
+    pdf_canvas.drawImage(img_reader, 50, 400, width=4 * inch, height=3 * inch)
 
-    # Place the image below the text
-    pdf_canvas.drawImage(img_reader, 50, 400, width=4*inch, height=3*inch)
+    # Add text after the image
+    text_object = pdf_canvas.beginText(50, 380)  # Start below the image
+    text_object.setFont("Helvetica", 12)
 
-    # finalize
+    for paragraph in text_after_image.split("\n\n"):
+        for line in paragraph.splitlines():
+            text_object.textLine(line)
+        text_object.textLine("")  # Add a blank line between paragraphs
+
+    pdf_canvas.drawText(text_object)
+
+    # Finalize the PDF
     pdf_canvas.showPage()
     pdf_canvas.save()
     pdf_buffer.seek(0)
