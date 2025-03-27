@@ -6,6 +6,10 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import inch
 from faker import Faker
 from reportlab.lib.utils import ImageReader  # Import ImageReader
+import textwrap
+
+# Set maximum line width in points (A4 page width is 595 pt, margins ~50 pt)
+max_width = 480  # You can tweak this as needed
 
 app = Flask(__name__)
 
@@ -46,12 +50,13 @@ def generate_pdf():
     text_object.setFont("Helvetica", 12)
 
     # Wrap and add the paragraphs
+ # Wrap and add the paragraphs
     for paragraph in text.split("\n\n"):
-        for line in paragraph.splitlines():
+        wrapped_lines = textwrap.wrap(paragraph, width=90)  # Adjust width to taste
+        for line in wrapped_lines:
             text_object.textLine(line)
         text_object.textLine("")  # Add a blank line between paragraphs
-
-    pdf_canvas.drawText(text_object)
+        pdf_canvas.drawText(text_object)
 
     # Embed the image
     img_buffer = io.BytesIO(image_data)
@@ -61,12 +66,14 @@ def generate_pdf():
     # Add text after the image
     text_object = pdf_canvas.beginText(50, 380)  # Start below the image
     text_object.setFont("Helvetica", 12)
-
+    # Wrap and add the paragraphs
     for paragraph in text_after_image.split("\n\n"):
-        for line in paragraph.splitlines():
+        wrapped_lines = textwrap.wrap(paragraph, width=90)  # Adjust width to taste
+        for line in wrapped_lines:
             text_object.textLine(line)
         text_object.textLine("")  # Add a blank line between paragraphs
 
+    # Draw the text object on the canvas    
     pdf_canvas.drawText(text_object)
 
     # Finalize the PDF
