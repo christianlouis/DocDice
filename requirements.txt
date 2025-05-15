@@ -1,5 +1,5 @@
-Flask==2.2.5
-requests==2.32.2
-reportlab==3.6.13
-Faker==18.9.0
+Flask>=2.2.5
+requests>=2.32.2
+reportlab>=3.6.13
+Faker>=18.9.0
 pillow>=10.2.0 # not directly required, pinned by Snyk to avoid a vulnerability
