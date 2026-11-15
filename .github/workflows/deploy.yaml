@@ -2,12 +2,6 @@ name: Deploy to Production
 
 on:
   workflow_dispatch:
-    inputs:
-      image_tag:
-        description: Published image tag to deploy
-        required: true
-        default: latest
-        type: string
 
 permissions:
   contents: read
@@ -21,15 +15,8 @@ jobs:
       - name: Call deployment webhook
         env:
           DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
-          DEPLOY_WEBHOOK_TOKEN: ${{ secrets.DEPLOY_WEBHOOK_TOKEN }}
-          IMAGE_TAG: ${{ inputs.image_tag }}
         run: |
           set -Eeuo pipefail
           test -n "$DEPLOY_WEBHOOK_URL"
-          test -n "$DEPLOY_WEBHOOK_TOKEN"
-          curl --fail-with-body --silent --show-error \
-            --request POST \
-            --header "Authorization: Bearer $DEPLOY_WEBHOOK_TOKEN" \
-            --header 'Content-Type: application/json' \
-            --data "{\"image_tag\":\"$IMAGE_TAG\"}" \
-            "$DEPLOY_WEBHOOK_URL"
+          curl --connect-timeout 10 --max-time 30 --fail --silent --show-error \
+            --request POST "$DEPLOY_WEBHOOK_URL" >/dev/null

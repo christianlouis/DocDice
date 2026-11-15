@@ -10,5 +10,8 @@ push, and publishes only branch pushes. The `latest` tag is emitted only for
 
 Production deployment is now exclusively a manual `workflow_dispatch` on the
 `main` branch and requires the `production` environment plus
-`DEPLOY_WEBHOOK_URL` and `DEPLOY_WEBHOOK_TOKEN` secrets. No webhook URL or
-credential is stored in the repository.
+the `DEPLOY_WEBHOOK_URL` secret. The workflow preserves the existing webhook
+contract: it sends only a POST request, without invented headers or a JSON
+body. Configure that secret in the production environment; no URL or
+credential is stored in the repository, and no secret rotation is performed by
+this change.

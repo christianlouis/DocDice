@@ -18,7 +18,14 @@ fi
 grep -Fq 'workflow_dispatch:' "$deploy"
 grep -Fq "if: github.ref == 'refs/heads/main'" "$deploy"
 grep -Fq 'DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}' "$deploy"
-grep -Fq 'DEPLOY_WEBHOOK_TOKEN: ${{ secrets.DEPLOY_WEBHOOK_TOKEN }}' "$deploy"
+grep -Fq -- '--connect-timeout 10 --max-time 30 --fail --silent --show-error' "$deploy"
+grep -Fq -- '--request POST "$DEPLOY_WEBHOOK_URL" >/dev/null' "$deploy"
+if grep -Fq 'DEPLOY_WEBHOOK_TOKEN' "$deploy" || \
+   grep -Fq 'inputs.image_tag' "$deploy" || \
+   grep -Fq 'Authorization: Bearer' "$deploy"; then
+  printf 'invented deployment token or payload contract found\n' >&2
+  exit 1
+fi
 if grep -Fq 'docker2.kuechenserver.org' "$deploy"; then
   printf 'literal deployment endpoint found\n' >&2
   exit 1
