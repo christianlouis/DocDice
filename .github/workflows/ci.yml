@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  docker-smoke:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build --tag docdice:ci .
+      - name: HTTP smoke test
+        run: |
+          set -Eeuo pipefail
+          cleanup() { docker rm --force docdice-ci >/dev/null 2>&1 || true; }
+          trap cleanup EXIT
+          docker run --detach --name docdice-ci --publish 127.0.0.1:5000:5000 docdice:ci
+          for attempt in {1..30}; do
+            if curl --fail --silent --show-error http://127.0.0.1:5000/; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs docdice-ci
+          exit 1
+      - name: Inventory runtime packages (read-only)
+        run: |
+          set -Eeuo pipefail
+          inventory="$(docker run --rm docdice:ci sh -c \
+            'set -eu; python --version; for package in perl libsqlite3-0 sqlite3; do status="$(dpkg-query -W -f="\${Status}" "$package" 2>/dev/null || true)"; if [ "$status" = "install ok installed" ]; then dpkg-query -W -f="\${Package} \${Version}\\n" "$package"; else echo "$package: not installed ($status)"; fi; done')"
+          printf '### DocDice runtime inventory\n\n```text\n%s\n```\n' "$inventory" >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' "$inventory"
