@@ -20,7 +20,14 @@ jobs:
           cleanup() { docker rm --force docdice-ci >/dev/null 2>&1 || true; }
           trap cleanup EXIT
           docker run --detach --name docdice-ci --publish 127.0.0.1:5000:5000 docdice:ci
-          curl --fail --retry 20 --retry-delay 1 --retry-connrefused http://127.0.0.1:5000/
+          for attempt in {1..30}; do
+            if curl --fail --silent --show-error http://127.0.0.1:5000/; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs docdice-ci
+          exit 1
       - name: Inventory runtime packages (read-only)
         run: |
           docker run --rm docdice:ci sh -c \
